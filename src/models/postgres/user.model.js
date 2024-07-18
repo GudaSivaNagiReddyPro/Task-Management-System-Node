@@ -59,6 +59,9 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      google_id: {
+        type: DataTypes.STRING,
+      },
       created_at: {
         allowNull: false,
         type: DataTypes.DATE,
