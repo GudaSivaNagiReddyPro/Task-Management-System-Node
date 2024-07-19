@@ -2,11 +2,13 @@
 const { httpsStatusCodes, httpResponses } = require("../constants");
 const { Task } = require("../models/postgres");
 const { successResponse, errorResponse } = require("../utils/response.util");
+const { sendSms } = require("../utils/send-sms.util");
 
 // create task
 const taskCreate = async (req, res, next) => {
   try {
     const { user } = req;
+    console.log(/user/, user.user.phone_number);
     const { title, description } = req.body;
     const createTask = await Task.create({
       title,
@@ -20,6 +22,8 @@ const taskCreate = async (req, res, next) => {
       updated_at: createTask.updated_at,
     };
     console.log(/task/, response);
+    const smsBody = `Task created Successfully ${createTask.title}`;
+    sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         response,
@@ -102,7 +106,8 @@ const updateTask = async (req, res, next) => {
     const response = {
       task: updatedTask,
     };
-
+    const smsBody = `Task updated Successfully ${updatedTask.title}`;
+    sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         response,
@@ -112,7 +117,6 @@ const updateTask = async (req, res, next) => {
       )
     );
   } catch (error) {
-    console.log(/error/, error);
     return res.json(
       errorResponse(
         "SOMETHING_WENT_WRONG_WHILE_UPDATING_TASK",
@@ -141,6 +145,8 @@ const deleteTask = async (req, res, next) => {
       );
     }
     await Task.destroy({ where: { uuid: uuid, user_id: user.user_id } });
+    const smsBody = `Task deleted Successfully ${task.title}`;
+    sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         "TASK_DELETED_SUCCESSFULLY",
@@ -190,7 +196,8 @@ const updateTaskStatus = async (req, res, next) => {
     const response = {
       task: updatedTask,
     };
-
+    const smsBody = `Task Status Updated Successfully ${task.title}`;
+    sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         response,
@@ -200,7 +207,6 @@ const updateTaskStatus = async (req, res, next) => {
       )
     );
   } catch (error) {
-    console.log(/error/, error);
     return res.json(
       errorResponse(
         "SOMETHING_WENT_WRONG_WHILE_UPDATING_TASK_STATUS",
