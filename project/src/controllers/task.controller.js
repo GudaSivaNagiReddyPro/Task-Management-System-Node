@@ -1,8 +1,12 @@
 "use strict";
+const { Op } = require("sequelize");
 const { httpsStatusCodes, httpResponses } = require("../constants");
 const { Task } = require("../models/postgres");
 const { successResponse, errorResponse } = require("../utils/response.util");
 const { sendSms } = require("../utils/send-sms.util");
+const {
+  globalConstant: { TaskStatus },
+} = require("../constants");
 
 // create task
 const taskCreate = async (req, res, next) => {
@@ -22,8 +26,8 @@ const taskCreate = async (req, res, next) => {
       updated_at: createTask.updated_at,
     };
     console.log(/task/, response);
-    const smsBody = `Task created Successfully ${createTask.title}`;
-    sendSms(user.user.phone_number, smsBody);
+    // const smsBody = `Task created Successfully ${createTask.title}`;
+    // sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         response,
@@ -217,10 +221,57 @@ const updateTaskStatus = async (req, res, next) => {
   }
 };
 
+const pastTasks = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const presentDate = Date.now();
+    const pastTasks = new Date(user.user.created_at).getTime() > presentDate;
+
+    console.log(/presentDate/, pastTasks);
+    const tasks = await Task.findAll({
+      where: {
+        [Op.and]: [
+          { created_at: user.user.created_at },
+          { status: TaskStatus.COMPLETED },
+        ],
+      },
+    });
+    if (!tasks) {
+      return res.json(
+        errorResponse(
+          "TASK_NOT_FOUND",
+          httpsStatusCodes.NOT_FOUND,
+          httpResponses.NOT_FOUND
+        )
+      );
+    }
+    const response = {
+      task: tasks,
+    };
+    return res.json(
+      successResponse(
+        response,
+        "PAST_TASKS_FETCHED_SUCCESSFULLY",
+        httpsStatusCodes.SUCCESS,
+        httpResponses.SUCCESS
+      )
+    );
+  } catch (error) {
+    console.log(/error/, error);
+    return res.json(
+      errorResponse(
+        "SOMETHING_WENT_WRONG_WHILE_PAST_TASK",
+        httpsStatusCodes.INTERNAL_SERVER_ERROR,
+        httpResponses.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+};
 module.exports = {
   taskCreate,
   fetchAllTasks,
   deleteTask,
   updateTask,
   updateTaskStatus,
+  pastTasks,
 };

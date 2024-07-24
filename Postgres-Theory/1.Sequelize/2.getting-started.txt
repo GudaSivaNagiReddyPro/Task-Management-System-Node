@@ -1,0 +1,26 @@
+Getting Started: 
+
+Installing:  $ npm install --save sequelize
+
+You'll also have to manually install the driver for your database of choice:
+# One of the following:
+$ npm install --save pg pg-hstore # Postgres
+$ npm install --save mysql2
+$ npm install --save mariadb
+$ npm install --save sqlite3
+$ npm install --save tedious # Microsoft SQL Server
+$ npm install --save oracledb # Oracle Database
+
+
+New databases versus existing databases
+
+If you are starting a project from scratch, and your database is still empty, Sequelize can be 
+used from the beginning in order to automate the creation of every table in your database.
+
+Also, if you want to use Sequelize to connect to a database that is already filled with tables and data, 
+that works as well! Sequelize has got you covered in both cases.
+
+Promises and async/await
+Most of the methods provided by Sequelize are asynchronous and therefore return Promises. They are all Promises, so you can use the Promise API (for example, using then, catch, finally) out of the box.
+
+Of course, using async and await works fine as well.

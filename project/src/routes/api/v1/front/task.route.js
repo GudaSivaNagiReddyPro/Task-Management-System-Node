@@ -5,6 +5,7 @@ const {
   updateTask,
   deleteTask,
   updateTaskStatus,
+  pastTasks,
 } = require("../../../../controllers/task.controller");
 const {
   isAuthentication,
@@ -45,5 +46,7 @@ router.delete(
   validateInput(deleteTaskSchema),
   deleteTask
 );
+
+router.get("/task-history",isAuthentication, pastTasks);
 
 module.exports = router;

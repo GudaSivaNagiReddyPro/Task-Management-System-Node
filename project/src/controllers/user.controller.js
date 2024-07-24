@@ -13,17 +13,22 @@ const signUp = async (req, res, next) => {
     const { first_name, last_name, email, phone_number, password } = req.body;
     //jf user exists
     const userExits = await User.findOne({ where: { email } });
+    // console.log(/user email/, userExits.email);
     if (userExits) {
       return res.json(errorResponse("USER_ALREADY_EXISTS"));
     }
     //creating user details to the database
-    const userCreate = await User.create({
-      first_name,
-      last_name,
-      email,
-      phone_number,
-      password,
-    });
+    const userCreate = await User.create(
+      {
+        first_name,
+        last_name,
+        email,
+        phone_number,
+        password,
+      },
+      // possible to create certain fields 
+      // { fields: ["first_name", "last_name", "email", "password"] } 
+    );
     // Prepare response data by excluding id, password, and deleted_at
     const responseData = {
       uuid: userCreate.uuid,
@@ -75,10 +80,79 @@ const signUp = async (req, res, next) => {
       )
     );
   } catch (error) {
+    console.log(/error/, error);
     return res.json(
       errorResponse("SOME_THING_WENT_WRONG_WHILE_CREATING_SIGN_UP")
     );
   }
 };
 
-module.exports = { signUp };
+// get profile
+const getProfile = async (req, res, next) => {
+  try {
+    const { user } = req;
+    console.log(/user/, user);
+    //jf user exists
+    const userExits = await User.findOne({ where: { id: user.user_id } });
+    return res.json(
+      successResponse(
+        userExits,
+        "USER_PROFILE_FETCHED_SUCCESSFULLY",
+        httpsStatusCodes.SUCCESS,
+        httpResponses.SUCCESS
+      )
+    );
+  } catch (error) {
+    console.log(/error/, error);
+    return res.json(errorResponse("SOME_THING_WENT_WRONG_WHILE_USER_PROFILE"));
+  }
+};
+// get profile
+const updateProfile = async (req, res, next) => {
+  try {
+    const { user } = req;
+    const { first_name, last_name, gender, phone_number } = req.body;
+    //jf user exists
+    const userExits = await User.findOne({ where: { id: user.user_id } });
+    if (!userExits) {
+      return res.json(
+        errorResponse(
+          "USER_NOT_FOUND",
+          httpsStatusCodes.NOT_FOUND,
+          httpResponses.NOT_FOUND
+        )
+      );
+    }
+    //updating user details to the database
+    await User.update(
+      {
+        first_name,
+        last_name,
+        gender,
+        phone_number,
+      },
+      { where: { id: user.user_id } }
+    );
+    // updating some fields
+    // userExits.first_name = first_name;
+    // userExits.last_name = last_name;
+    // userExits.phone_number = phone_number;
+    // userExits.gender = gender;
+    // await userExits.save({ fields: ["first_name", "last_name"] });
+    return res.json(
+      successResponse(
+        "",
+        "USER_PROFILE_UPDATED_SUCCESSFULLY",
+        httpsStatusCodes.SUCCESS,
+        httpResponses.SUCCESS
+      )
+    );
+  } catch (error) {
+    console.log(/error/, error);
+    return res.json(
+      errorResponse("SOME_THING_WENT_WRONG_WHILE_USER_UPDATE_PROFILE")
+    );
+  }
+};
+
+module.exports = { signUp, getProfile, updateProfile };
