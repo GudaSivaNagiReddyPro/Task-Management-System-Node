@@ -1,0 +1,119 @@
+Advanced queries with functions (not just columns):
+
+    What if you wanted to obtain something like WHERE char_length("content") = 7?
+
+    Post.findAll({
+    where: sequelize.where(sequelize.fn('char_length', sequelize.col('content')), 7),
+    });
+    // SELECT ... FROM "posts" AS "post" WHERE char_length("content") = 7
+
+    Note the usage of the sequelize.fn and sequelize.col methods, which should be used to specify an SQL function call and a table column, respectively. These methods should be used instead of passing a plain string (such as char_length(content)) because Sequelize needs to treat this situation differently (for example, using other symbol escaping approaches).
+
+    What if you need something even more complex?
+
+    Post.findAll({
+    where: {
+        [Op.or]: [
+        sequelize.where(sequelize.fn('char_length', sequelize.col('content')), 7),
+        {
+            content: {
+            [Op.like]: 'Hello%',
+            },
+        },
+        {
+            [Op.and]: [
+            { status: 'draft' },
+            sequelize.where(sequelize.fn('char_length', sequelize.col('content')), {
+                [Op.gt]: 10,
+            }),
+            ],
+        },
+        ],
+    },
+    });
+
+    The above generates the following SQL:
+
+    SELECT
+    ...
+    FROM "posts" AS "post"
+    WHERE (
+    char_length("content") = 7
+    OR
+    "post"."content" LIKE 'Hello%'
+    OR (
+        "post"."status" = 'draft'
+        AND
+        char_length("content") > 10
+    )
+    )
+
+Postgres-only Range Operators:
+
+    Range types can be queried with all supported operators.
+
+    Keep in mind, the provided range value can define the bound inclusion/exclusion as well.
+
+    [Op.contains]: 2,            // @> '2'::integer  (PG range contains element operator)
+    [Op.contains]: [1, 2],       // @> [1, 2)        (PG range contains range operator)
+    [Op.contained]: [1, 2],      // <@ [1, 2)        (PG range is contained by operator)
+    [Op.overlap]: [1, 2],        // && [1, 2)        (PG range overlap (have points in common) operator)
+    [Op.adjacent]: [1, 2],       // -|- [1, 2)       (PG range is adjacent to operator)
+    [Op.strictLeft]: [1, 2],     // << [1, 2)        (PG range strictly left of operator)
+    [Op.strictRight]: [1, 2],    // >> [1, 2)        (PG range strictly right of operator)
+    [Op.noExtendRight]: [1, 2],  // &< [1, 2)        (PG range does not extend to the right of operator)
+    [Op.noExtendLeft]: [1, 2],   // &> [1, 2)        (PG range does not extend to the left of operator)
+
+Deprecated: Operator Aliases:
+
+    In Sequelize v4, it was possible to specify strings to refer to operators, 
+    instead of using Symbols. This is now deprecated and heavily discouraged, 
+    and will probably be removed in the next major version. If you really need it,
+    you can pass the operatorAliases option in the Sequelize constructor.
+
+    For example:
+
+    const { Sequelize, Op } = require('sequelize');
+    const sequelize = new Sequelize('sqlite::memory:', {
+    operatorsAliases: {
+        $gt: Op.gt,
+    },
+    });
+
+    // Now we can use `$gt` instead of `[Op.gt]` in where clauses:
+    Foo.findAll({
+    where: {
+        $gt: 6, // Works like using [Op.gt]
+    },
+    });
+
+    Simple UPDATE queries
+Update queries also accept the where option, just like the read queries shown above.
+
+// Change everyone without a last name to "Doe"
+await User.update(
+  { lastName: 'Doe' },
+  {
+    where: {
+      lastName: null,
+    },
+  },
+);
+
+Simple DELETE queries: 
+
+    Delete queries also accept the where option, just like the read queries shown above.
+
+    // Delete everyone named "Jane"
+    await User.destroy({
+    where: {
+        firstName: 'Jane',
+    },
+    });
+
+To destroy everything the TRUNCATE SQL can be used:
+
+    // Truncate the table
+    await User.destroy({
+    truncate: true,
+    });

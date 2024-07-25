@@ -3,6 +3,7 @@ const {
   signUp,
   getProfile,
   updateProfile,
+  findAllUsers,
 } = require("../../../../controllers/user.controller");
 const { validateInput } = require("../../../../utils/validate.util");
 const { signUpSchema } = require("../../../../validations/auth.validation");
@@ -24,4 +25,5 @@ router.put(
   updateProfile
 );
 
+router.get("/all-users",findAllUsers)
 module.exports = router;

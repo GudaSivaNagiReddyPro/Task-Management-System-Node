@@ -6,6 +6,7 @@ const { User } = require("../models/postgres");
 const { successResponse, errorResponse } = require("../utils/response.util");
 const { jwtConfig } = require("../configs/jwt.config");
 const sendEmail = require("../utils/send-email.util");
+const { Op, where } = require("sequelize");
 
 // register User
 const signUp = async (req, res, next) => {
@@ -25,9 +26,9 @@ const signUp = async (req, res, next) => {
         email,
         phone_number,
         password,
-      },
-      // possible to create certain fields 
-      // { fields: ["first_name", "last_name", "email", "password"] } 
+      }
+      // possible to create certain fields
+      // { fields: ["first_name", "last_name", "email", "password"] }
     );
     // Prepare response data by excluding id, password, and deleted_at
     const responseData = {
@@ -155,4 +156,44 @@ const updateProfile = async (req, res, next) => {
   }
 };
 
-module.exports = { signUp, getProfile, updateProfile };
+const findAllUsers = async (req, res, next) => {
+  try {
+    const findUsers = await User.findAndCountAll({
+      
+      attributes: [
+        "uuid",
+        "first_name",
+        "last_name",
+        "email",
+        "gender",
+        "phone_number",
+        "password",
+        "user_type",
+        "status",
+        "is_email_verified",
+        "google_id",
+        "created_at",
+        "updated_at",
+      ],
+    });
+    return res.json(
+      successResponse(
+        findUsers,
+        "USERS_FETCHED_SUCCESSFULLY",
+        httpsStatusCodes.SUCCESS,
+        httpResponses.SUCCESS
+      )
+    );
+  } catch (error) {
+    console.log(/error/, error);
+    return res.json(
+      errorResponse(
+        "SOME_THING_WENT_WRONG_WHILE_FETCHING_ALL_USERS",
+        httpsStatusCodes.INTERNAL_SERVER_ERROR,
+        httpResponses.INTERNAL_SERVER_ERROR
+      )
+    );
+  }
+};
+
+module.exports = { signUp, getProfile, updateProfile, findAllUsers };

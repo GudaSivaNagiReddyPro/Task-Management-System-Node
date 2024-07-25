@@ -1,0 +1,189 @@
+Creating in bulk
+
+    Sequelize provides the Model.bulkCreate method to allow creating multiple records at once, with only one query.
+
+    The usage of Model.bulkCreate is very similar to Model.create, by receiving an array of objects instead of a single object.
+
+    const captains = await Captain.bulkCreate([{ name: 'Jack Sparrow' }, { name: 'Davy Jones' }]);
+    console.log(captains.length); // 2
+    console.log(captains[0] instanceof Captain); // true
+    console.log(captains[0].name); // 'Jack Sparrow'
+    console.log(captains[0].id); // 1 // (or another auto-generated value)
+
+    However, by default, bulkCreate does not run validations on each object that is going to be created (which create does). To make bulkCreate run these validations as well, you must pass the validate: true option. This will decrease performance. Usage example:
+
+    const Foo = sequelize.define('foo', {
+    name: {
+        type: DataTypes.TEXT,
+        validate: {
+        len: [4, 6],
+        },
+    },
+    });
+
+    // This will not throw an error, both instances will be created
+    await Foo.bulkCreate([{ name: 'abc123' }, { name: 'name too long' }]);
+
+    // This will throw an error, nothing will be created
+    await Foo.bulkCreate([{ name: 'abc123' }, { name: 'name too long' }], {
+    validate: true,
+    });
+
+    If you are accepting values directly from the user, it might be beneficial to limit the columns that you want to actually insert. To support this, bulkCreate() accepts a fields option, an array defining which fields must be considered (the rest will be ignored).
+
+    await User.bulkCreate([{ username: 'foo' }, { username: 'bar', admin: true }], {
+    fields: ['username'],
+    });
+    // Neither foo nor bar are admins.
+
+Ordering and Grouping:
+
+    Sequelize provides the order and group options to work with ORDER BY and GROUP BY.
+
+Ordering:
+    The order option takes an array of items to order the query by or a sequelize method. 
+    These items are themselves arrays in the form [column, direction]. 
+    The column will be escaped correctly and the direction will be checked in a whitelist of valid directions (such as ASC, DESC, NULLS FIRST, etc).
+
+    Subtask.findAll({
+    order: [
+        // Will escape title and validate DESC against a list of valid direction parameters
+        ['title', 'DESC'],
+
+        // Will order by max(age)
+        sequelize.fn('max', sequelize.col('age')),
+
+        // Will order by max(age) DESC
+        [sequelize.fn('max', sequelize.col('age')), 'DESC'],
+
+        // Will order by  otherfunction(`col1`, 12, 'lalala') DESC
+        [sequelize.fn('otherfunction', sequelize.col('col1'), 12, 'lalala'), 'DESC'],
+
+        // Will order an associated model's createdAt using the model name as the association's name.
+        [Task, 'createdAt', 'DESC'],
+
+        // Will order through an associated model's createdAt using the model names as the associations' names.
+        [Task, Project, 'createdAt', 'DESC'],
+
+        // Will order by an associated model's createdAt using the name of the association.
+        ['Task', 'createdAt', 'DESC'],
+
+        // Will order by a nested associated model's createdAt using the names of the associations.
+        ['Task', 'Project', 'createdAt', 'DESC'],
+
+        // Will order by an associated model's createdAt using an association object. (preferred method)
+        [Subtask.associations.Task, 'createdAt', 'DESC'],
+
+        // Will order by a nested associated model's createdAt using association objects. (preferred method)
+        [Subtask.associations.Task, Task.associations.Project, 'createdAt', 'DESC'],
+
+        // Will order by an associated model's createdAt using a simple association object.
+        [{ model: Task, as: 'Task' }, 'createdAt', 'DESC'],
+
+        // Will order by a nested associated model's createdAt simple association objects.
+        [{ model: Task, as: 'Task' }, { model: Project, as: 'Project' }, 'createdAt', 'DESC'],
+    ],
+
+    // Will order by max age descending
+    order: sequelize.literal('max(age) DESC'),
+
+    // Will order by max age ascending assuming ascending is the default order when direction is omitted
+    order: sequelize.fn('max', sequelize.col('age')),
+
+    // Will order by age ascending assuming ascending is the default order when direction is omitted
+    order: sequelize.col('age'),
+
+    // Will order randomly based on the dialect (instead of fn('RAND') or fn('RANDOM'))
+    order: sequelize.random(),
+    });
+
+    Foo.findOne({
+    order: [
+        // will return `name`
+        ['name'],
+        // will return `username` DESC
+        ['username', 'DESC'],
+        // will return max(`age`)
+        sequelize.fn('max', sequelize.col('age')),
+        // will return max(`age`) DESC
+        [sequelize.fn('max', sequelize.col('age')), 'DESC'],
+        // will return otherfunction(`col1`, 12, 'lalala') DESC
+        [sequelize.fn('otherfunction', sequelize.col('col1'), 12, 'lalala'), 'DESC'],
+        // will return otherfunction(awesomefunction(`col`)) DESC, This nesting is potentially infinite!
+        [sequelize.fn('otherfunction', sequelize.fn('awesomefunction', sequelize.col('col'))), 'DESC'],
+    ],
+    });
+
+
+    To recap, the elements of the order array can be the following:
+
+    A string (which will be automatically quoted)
+    An array, whose first element will be quoted, second will be appended verbatim
+    An object with a raw field:
+    The content of raw will be added verbatim without quoting
+    Everything else is ignored, and if raw is not set, the query will fail
+    A call to Sequelize.fn (which will generate a function call in SQL)
+    A call to Sequelize.col (which will quote the column name)  
+
+Grouping:
+
+    The syntax for grouping and ordering are equal, except that grouping does not accept a direction as last argument of the array (there is no ASC, DESC, NULLS FIRST, etc).
+
+    You can also pass a string directly to group, which will be included directly (verbatim) into the generated SQL. Use with caution and don't use with user generated content.
+
+    Project.findAll({ group: 'name' });
+    // yields 'GROUP BY name'
+
+    Limits and Pagination
+    The limit and offset options allow you to work with limiting / pagination:
+
+    // Fetch 10 instances/rows
+    Project.findAll({ limit: 10 });
+
+    // Skip 8 instances/rows
+    Project.findAll({ offset: 8 });
+
+    // Skip 5 instances and fetch the 5 after that
+    Project.findAll({ offset: 5, limit: 5 });
+
+    Usually these are used alongside the order option.
+
+    Utility methods
+    Sequelize also provides a few utility methods.
+
+count:
+
+    The count method simply counts the occurrences of elements in the database.
+
+    console.log(`There are ${await Project.count()} projects`);
+
+    const amount = await Project.count({
+    where: {
+        id: {
+        [Op.gt]: 25,
+        },
+    },
+    });
+    console.log(`There are ${amount} projects with an id greater than 25`);
+
+max, min and sum:
+
+    Sequelize also provides the max, min and sum convenience methods.
+
+    Let's assume we have three users, whose ages are 10, 5, and 40.
+
+    await User.max('age'); // 40
+    await User.max('age', { where: { age: { [Op.lt]: 20 } } }); // 10
+    await User.min('age'); // 5
+    await User.min('age', { where: { age: { [Op.gt]: 5 } } }); // 10
+    await User.sum('age'); // 55
+    await User.sum('age', { where: { age: { [Op.gt]: 5 } } }); // 50
+
+increment, decrement:
+
+    Sequelize also provides the increment convenience method.
+
+    Let's assume we have a user, whose age is 10.
+
+    await User.increment({ age: 5 }, { where: { id: 1 } }); // Will increase age to 15
+    await User.increment({ age: -5 }, { where: { id: 1 } }); // Will decrease age to 5

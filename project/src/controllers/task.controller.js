@@ -54,7 +54,11 @@ const fetchAllTasks = async (req, res, next) => {
     const { user } = req;
     const findTasks = await Task.findAll({
       where: { user_id: user.user_id },
-      attributes: { exclude: ["id", "user_id"] },
+      attributes: { exclude: ["id", "user_id","deleted_at"] },
+      // raw: true
+      // limit: 2
+      // order: [['title',"DESC"]],
+      // where: { age: { [Op.or]: { [Op.gte]: 100, [Op.eq]: null } } },
     }); // Exclude the id and user_id fields });
     const response = {
       task: findTasks,
@@ -68,6 +72,7 @@ const fetchAllTasks = async (req, res, next) => {
       )
     );
   } catch (error) {
+    console.log(/error/, error);
     return res.json(
       errorResponse(
         "SOME_THING_WENT_WRONG_WHILE_FETCHING_ALL_TASK",
@@ -148,9 +153,12 @@ const deleteTask = async (req, res, next) => {
         )
       );
     }
-    await Task.destroy({ where: { uuid: uuid, user_id: user.user_id } });
-    const smsBody = `Task deleted Successfully ${task.title}`;
-    sendSms(user.user.phone_number, smsBody);
+    await Task.destroy({
+      where: { uuid: uuid, user_id: user.user_id },
+      // truncate: true,
+    });
+    // const smsBody = `Task deleted Successfully ${task.title}`;
+    // sendSms(user.user.phone_number, smsBody);
     return res.json(
       successResponse(
         "TASK_DELETED_SUCCESSFULLY",
@@ -267,6 +275,7 @@ const pastTasks = async (req, res, next) => {
     );
   }
 };
+
 module.exports = {
   taskCreate,
   fetchAllTasks,
