@@ -19,7 +19,7 @@ A very useful shortcut: the create method:
 
     Sequelize provides the create method, which combines the build and save methods shown above into a single method:
 
-    const jane = await User.create({ name: 'Jane' });
+    const jane = await User.create({ name: 'Jane' })
     // Jane exists in the database now!
     console.log(jane instanceof User); // true
     console.log(jane.name); // "Jane"

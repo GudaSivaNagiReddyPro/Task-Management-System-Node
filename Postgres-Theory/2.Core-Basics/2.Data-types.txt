@@ -29,7 +29,7 @@ Data Types
 
     DataTypes.REAL; // REAL            PostgreSQL only.
     DataTypes.REAL(11); // REAL(11)        PostgreSQL only.
-    DataTypes.REAL(11, 12); // REAL(11,12)     PostgreSQL only.
+    DataTypes.REAL(11, 12); // REAL(11,12)     PostgreSQL only
 
     DataTypes.DOUBLE; // DOUBLE
     DataTypes.DOUBLE(11); // DOUBLE(11)

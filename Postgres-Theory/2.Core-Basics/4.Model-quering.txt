@@ -176,7 +176,7 @@ An OR can be easily performed in a similar way:
     where: {
         authorId: {
         [Op.or]: [12, 13],
-        },
+        }
     },
     });
     // DELETE FROM post WHERE authorId = 12 OR authorId = 13;
