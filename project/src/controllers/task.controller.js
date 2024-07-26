@@ -156,6 +156,7 @@ const deleteTask = async (req, res, next) => {
     await Task.destroy({
       where: { uuid: uuid, user_id: user.user_id },
       // truncate: true,
+      // force: true
     });
     // const smsBody = `Task deleted Successfully ${task.title}`;
     // sendSms(user.user.phone_number, smsBody);
